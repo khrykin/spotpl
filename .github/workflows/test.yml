@@ -1,0 +1,131 @@
+name: Test
+
+on:
+  push:
+    branches-ignore:
+      - master
+    tags-ignore:
+      - v*
+
+  pull_request:
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: RelWithDebInfo
+  CREDENTIALS: ${{ secrets.CREDENTIALS }}
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      matrix:
+        include:
+          - name: 'macOS x64'
+            os: macos-latest
+            arch: x64
+
+          - name: 'Linux x64 Clang'
+            os: ubuntu-latest
+            arch: x64
+            cxx-compiler: clang++
+            c-compiler: clang
+
+          - name: 'Linux x64 Clang (AddressSanitizer)'
+            os: ubuntu-latest
+            arch: x64
+            cxx-compiler: clang++
+            c-compiler: clang
+            cmake-extra-defs: '-DASAN=ON'
+
+          - name: 'Linux x64 Clang (UBSanitizer)'
+            os: ubuntu-latest
+            arch: x64
+            cxx-compiler: clang++
+            c-compiler: clang
+            cmake-extra-defs: '-DUBSAN=ON'
+
+          - name: 'Linux x64 Clang (LeakSanitizer)'
+            os: ubuntu-latest
+            arch: x64
+            cxx-compiler: clang++
+            c-compiler: clang
+            cmake-extra-defs: '-DLSAN=ON'
+
+          - name: 'Linux x64 Clang (ThreadSanitizer)'
+            os: ubuntu-latest
+            arch: x64
+            cxx-compiler: clang++
+            c-compiler: clang
+            cmake-extra-defs: '-DTSAN=ON'
+
+          - name: 'Linux x64 GCC'
+            os: ubuntu-latest
+            arch: x64
+            cxx-compiler: g++
+            c-compiler: gcc
+
+          - name: 'Windows x86'
+            os: windows-latest
+            arch: x86
+            cmake-extra-args: '-A Win32'
+            cmake-extra-defs: '-DVCPKG_TARGET_TRIPLET=x86-windows-static'
+
+          - name: 'Windows x64'
+            os: windows-latest
+            arch: x64
+            cmake-extra-args: '-A x64'
+            cmake-extra-defs: '-DVCPKG_TARGET_TRIPLET=x64-windows-static'
+
+    env:
+      CXX: ${{ matrix.cxx-compiler }}
+      CC:  ${{ matrix.c-compiler }}
+      BUILD_DIR: build
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        env:
+          cache-name: vcpkg-cache-${{ runner.os }}-${{ matrix.arch }}
+        with:
+          path: vcpkg
+          key: ${{ env.cache-name }}-${{ hashFiles('InstallDeps.cmake') }}
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v1.4
+        with:
+          cmake-version: '3.18.x'
+
+      - name: Use CMake
+        run: cmake --version
+
+      - name: Build dependencies
+        run: cmake -DRELEASE_ONLY=ON -DCLEAN=ON -P InstallDeps.cmake
+
+      - name: Create build environment
+        run: cmake -E make_directory ${{ env.BUILD_DIR }}
+
+      - name: Configure CMake
+        working-directory: ${{ env.BUILD_DIR }}
+        run: |
+          cmake ${{ matrix.cmake-extra-args }} $GITHUB_WORKSPACE \
+          -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+          -DCREDENTIALS=$CREDENTIALS \
+          -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake \
+          ${{ matrix.cmake-extra-defs }}
+
+      - name: Build
+        working-directory: ${{ env.BUILD_DIR }}
+        shell: bash
+        run: cmake --build . --config $BUILD_TYPE
+
+      - name: Test
+        working-directory: ${{ env.BUILD_DIR }}
+        run: ctest --output-on-failure

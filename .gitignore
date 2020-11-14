@@ -1,0 +1,7 @@
+.idea
+third-party
+API_CREDENTIALS
+__pycache__
+.vscode
+vcpkg
+packages
