@@ -46,9 +46,9 @@ jobs:
       CXX: ${{ matrix.cxx-compiler }}
       CC:  ${{ matrix.c-compiler }}
       BUILD_DIR: build
-      CODESIGN_KEYCHAIN: '/Users/runner/Library/Keychains/codesign.keychain-db'
-      CODESIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
-      CODESIGN_MAC_INSTALLER_IDENTITY: ${{ secrets.CODESIGN_MAC_INSTALLER_IDENTITY }}
+      CODE_SIGN_KEYCHAIN: '/Users/runner/Library/Keychains/codesign.keychain-db'
+      CODE_SIGN_IDENTITY: ${{ secrets.CODESIGN_IDENTITY }}
+      CODE_SIGN_MAC_INSTALLER_IDENTITY: ${{ secrets.CODESIGN_MAC_INSTALLER_IDENTITY }}
       APPLE_ID_EMAIL: ${{ secrets.APPLE_ID_EMAIL }}
       APPLE_NOTARIZATION_PASSWORD: ${{ secrets.APPLE_NOTARIZATION_PASSWORD }}
     steps:
@@ -63,12 +63,12 @@ jobs:
         with:
           path: vcpkg
           key: ${{ env.cache-name }}-${{ hashFiles('InstallDeps.cmake') }}
-      
+
       - name: Setup Developer ID Certificate
         if: ${{ startsWith(runner.os, 'macOS') }}
         uses: apple-actions/import-codesign-certs@v1
         with:
-          keychain: 'codesign' 
+          keychain: 'codesign'
           p12-file-base64: ${{ secrets.APPLE_CERTIFICATES_P12 }}
           p12-password: ${{ secrets.APPLE_CERTIFICATES_P12_PASSWORD }}
 
@@ -94,12 +94,12 @@ jobs:
           -DCREDENTIALS=$CREDENTIALS \
           -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake \
           ${{ matrix.cmake-extra-defs }}
-          
+
       - name: Package
         working-directory: ${{ env.BUILD_DIR }}
         shell: bash
         run: cmake --build . --config Release --target package
-  
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url  }}
-    steps:          
+    steps:
       - uses: actions/create-release@v1
         id: create_release
         env:
@@ -122,31 +122,31 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: spotpl ${{ github.ref }}
           draft: true
-          
-  upload: 
+
+  upload:
     name: Publish artifacts
     needs: [create-release]
     runs-on: ubuntu-latest
     strategy:
       matrix:
         artifact: [spotpl-macOS-x64, spotpl-Linux-x64, spotpl-Windows-x86, spotpl-Windows-x64]
-    steps: 
+    steps:
       - uses: actions/download-artifact@v2
         id: download
         with:
           name: ${{ matrix.artifact }}
-          
+
       - name: Find package
         id: find_package
         run: |
           echo $(find spotpl*)
           echo "::set-output name=package_path::$(find spotpl*)"
         working-directory: ${{ steps.download.outputs.download-path }}
-        
+
       - name: Package found
         run: |
           echo "Package: ${{ steps.find_package.outputs.package_path }}"
-        
+
       - name: Upload Release Asset
         uses: shogo82148/actions-upload-release-asset@v1
         env:

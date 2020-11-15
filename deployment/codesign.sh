@@ -42,9 +42,9 @@ then
       exit 1
 fi
 
-if [ -z "$CODESIGN_IDENTITY" ]
+if [ -z "$CODE_SIGN_IDENTITY" ]
 then
-      error "CODESIGN_IDENTITY environment variable must be set"
+      error "CODE_SIGN_IDENTITY environment variable must be set"
       exit 2
 fi
 
@@ -56,8 +56,8 @@ sign_output=$(codesign \
                 --verbose \
                 --timestamp \
                 --options=runtime \
-                --keychain "$CODESIGN_KEYCHAIN" \
-                -s "$CODESIGN_IDENTITY" \
+                --keychain "$CODE_SIGN_KEYCHAIN" \
+                -s "$CODE_SIGN_IDENTITY" \
                 "$1" 2>&1)
 
 if [  -$? -ne 0 ]
