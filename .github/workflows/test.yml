@@ -13,6 +13,7 @@ env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: RelWithDebInfo
   CREDENTIALS: ${{ secrets.CREDENTIALS }}
+  DEVELOPER_DIR: /Applications/Xcode_12.2.app/Contents/Developer
 
 jobs:
   build:
@@ -98,10 +99,9 @@ jobs:
           path: vcpkg
           key: ${{ env.cache-name }}-${{ hashFiles('InstallDeps.cmake') }}
 
-      - name: Select Xcode version
+      - name: Xcode version
         if: ${{ startsWith(runner.os, 'macOS') }}
         run: |
-          xcode-select -switch /Applications/Xcode_12.2.app
           xcodebuild -version
 
       - name: Setup CMake
