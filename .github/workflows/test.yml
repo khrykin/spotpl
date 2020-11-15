@@ -101,7 +101,7 @@ jobs:
       - name: Select Xcode version
         if: ${{ startsWith(runner.os, 'macOS') }}
         run: |
-          xcodeselect -switch /Applications/Xcode_12.2.app
+          xcode-select -switch /Applications/Xcode_12.2.app
           xcodebuild -version
 
       - name: Setup CMake
