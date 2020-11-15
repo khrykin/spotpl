@@ -98,6 +98,12 @@ jobs:
           path: vcpkg
           key: ${{ env.cache-name }}-${{ hashFiles('InstallDeps.cmake') }}
 
+      - name: Select Xcode version
+        if: ${{ startsWith(runner.os, 'macOS') }}
+        run: |
+          xcodeselect -switch /Applications/Xcode_12.2.app
+          xcodebuild -version
+
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.4
         with:
