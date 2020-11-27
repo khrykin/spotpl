@@ -1,8 +1,8 @@
 if (APPLE AND NOTARIZE)
     file(GLOB INSTALL_PACKAGE "${CPACK_PACKAGE_DIRECTORY}/*.pkg")
 
-    if (NOT DEFINED ENV{CODESIGN_MAC_INSTALLER_IDENTITY})
-        message(FATAL_ERROR "CODESIGN_MAC_INSTALLER_IDENTITY environment variable must be set to appropriate identitiy")
+    if (NOT DEFINED ENV{CODE_SIGN_MAC_INSTALLER_IDENTITY})
+        message(FATAL_ERROR "CODE_SIGN_MAC_INSTALLER_IDENTITY environment variable must be set to appropriate identitiy")
     endif ()
 
     get_filename_component(NOTARIZATION_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/../../deployment/notarize.sh" ABSOLUTE)
