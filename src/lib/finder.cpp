@@ -123,8 +123,8 @@ namespace spotpl {
         //        album_paths.insert(album_paths.end(), albums.begin(), albums.end());
         //    }
 
-        for (const auto &album_path : album_paths) {
-            for (const auto &entry : fs::directory_iterator(album_path)) {
+        const auto search_in_dir = [&](const auto &dir_path) {
+            for (const auto &entry : fs::directory_iterator(dir_path)) {
                 auto normalized_filename = fs::normalize(entry.path().stem().string());
 
                 if (normalized_filename.find(normalized_track_name) != std::string::npos) {
@@ -132,12 +132,18 @@ namespace spotpl {
                     break;
                 }
             }
+        };
+
+        for (const auto &album_path : album_paths) {
+            search_in_dir(album_path);
         }
 
         // Last resort - search in special locations
         if (!track_path) {
-            if (various_artists_cache.find(fs::normalize(track.name)) != various_artists_cache.end()) {
-                track_path = std::make_unique<path>(various_artists_cache[normalized_track_name]);
+            auto va_cache_it = various_artists_cache.find(fs::normalize(track.album));
+            if (va_cache_it != various_artists_cache.end()) {
+                auto va_album_path = va_cache_it->second;
+                search_in_dir(va_album_path);
             }
         }
 
